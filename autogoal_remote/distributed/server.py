@@ -1,27 +1,22 @@
 import uuid
 import json
-from typing import Any
 import uvicorn
 from autogoal_remote.distributed.proxy import (
-    AttrCallRequest,
-    InstantiateRequest,
     RemoteAlgorithmDTO,
-    decode,
     dumps,
-    encode,
     loads,
 )
 
-from fastapi import FastAPI, Request, WebSocket
-from fastapi.exceptions import HTTPException
+from fastapi import FastAPI, WebSocket
+# from fastapi.exceptions import HTTPException
 
 from autogoal_contrib import find_classes
-from autogoal.utils import Gb, Hour, Kb, Mb, Min, RestrictedWorkerWithState, Sec
+from autogoal.utils import Gb, RestrictedWorkerWithState, Sec
 from autogoal.utils._dynamic import dynamic_call
 
 from autogoal_remote.distributed.utils import receive_large_message, send_large_message
-import pprint
-import time
+# import pprint
+# import time
 
 app = FastAPI()
 
@@ -48,91 +43,91 @@ remote_call_timeout = 20 * Sec
 #####################
 
 
-@app.get("/")
-async def root():
-    return {"message": "Service Running"}
+# @app.get("/")
+# async def root():
+#     return {"message": "Service Running"}
 
 
-@app.get("/algorithms")
-async def get_exposed_algorithms(request: Request):
-    """
-    Returns exposed algorithms
-    """
-    remote_algorithms = [
-        RemoteAlgorithmDTO.from_algorithm_class(a) for a in stored_data
-    ]
-    return {
-        "message": f"Exposing {str(len(stored_data))} algorithms: {', '.join([a.__name__ for a in stored_data])}",
-        "algorithms": remote_algorithms,
-    }
+# @app.get("/algorithms")
+# async def get_exposed_algorithms(request: Request):
+#     """
+#     Returns exposed algorithms
+#     """
+#     remote_algorithms = [
+#         RemoteAlgorithmDTO.from_algorithm_class(a) for a in stored_data
+#     ]
+#     return {
+#         "message": f"Exposing {str(len(stored_data))} algorithms: {', '.join([a.__name__ for a in stored_data])}",
+#         "algorithms": remote_algorithms,
+#     }
 
 
-@app.post("/algorithm/call")
-async def instantiate(request: AttrCallRequest):
-    id = uuid.UUID(request.instance_id, version=4)
-    inst = algorithm_pool.get(id)
-    if inst == None:
-        raise HTTPException(400, f"Algorithm instance with id={id} not found")
+# @app.post("/algorithm/call")
+# async def instantiate(request: AttrCallRequest):
+#     id = uuid.UUID(request.instance_id, version=4)
+#     inst = algorithm_pool.get(id)
+#     if inst == None:
+#         raise HTTPException(400, f"Algorithm instance with id={id} not found")
 
-    attr = getattr(inst, request.attr)
-    is_callable = hasattr(attr, "__call__")
+#     attr = getattr(inst, request.attr)
+#     is_callable = hasattr(attr, "__call__")
 
-    func = (
-        RestrictedWorkerWithState(
-            dynamic_call, remote_call_timeout, remote_call_memory_limit
-        )
-        if is_callable
-        else None
-    )
+#     func = (
+#         RestrictedWorkerWithState(
+#             dynamic_call, remote_call_timeout, remote_call_memory_limit
+#         )
+#         if is_callable
+#         else None
+#     )
 
-    try:
-        result = (
-            func(inst, request.attr, *loads(request.args), **loads(request.kwargs))
-            if is_callable
-            else attr
-        )
-    except Exception as e:
-        raise HTTPException(500, str(e))
+#     try:
+#         result = (
+#             func(inst, request.attr, *loads(request.args), **loads(request.kwargs))
+#             if is_callable
+#             else attr
+#         )
+#     except Exception as e:
+#         raise HTTPException(500, str(e))
 
-    return {"result": dumps(result)}
-
-
-@app.post("/algorithm/has_attr")
-async def has_attr(request: AttrCallRequest):
-    id = uuid.UUID(request.instance_id, version=4)
-    inst = algorithm_pool.get(id)
-    if inst == None:
-        raise HTTPException(400, f"Algorithm instance with id={id} not found")
-
-    try:
-        attr = getattr(inst, request.attr)
-        result = True
-    except:
-        result = False
-
-    return {"exists": result, "is_callable": result and hasattr(attr, "__call__")}
+#     return {"result": dumps(result)}
 
 
-@app.post("/algorithm/instantiate")
-async def instantiate(request: InstantiateRequest):
-    dto = RemoteAlgorithmDTO.parse_obj(request.algorithm_dto)
-    cls = dto.get_original_class()
-    new_id = uuid.uuid4()
-    algorithm_pool[new_id] = cls(*loads(request.args), **loads(request.kwargs))
-    return {"message": "success", "id": new_id.bytes}
+# @app.post("/algorithm/has_attr")
+# async def has_attr(request: AttrCallRequest):
+#     id = uuid.UUID(request.instance_id, version=4)
+#     inst = algorithm_pool.get(id)
+#     if inst == None:
+#         raise HTTPException(400, f"Algorithm instance with id={id} not found")
+
+#     try:
+#         attr = getattr(inst, request.attr)
+#         result = True
+#     except:
+#         result = False
+
+#     return {"exists": result, "is_callable": result and hasattr(attr, "__call__")}
 
 
-@app.delete("/algorithm/{raw_id}")
-async def delete_algorithm(raw_id):
-    id = uuid.UUID(raw_id, version=4)
+# @app.post("/algorithm/instantiate")
+# async def instantiate(request: InstantiateRequest):
+#     dto = RemoteAlgorithmDTO.parse_obj(request.algorithm_dto)
+#     cls = dto.get_original_class()
+#     new_id = uuid.uuid4()
+#     algorithm_pool[new_id] = cls(*loads(request.args), **loads(request.kwargs))
+#     return {"message": "success", "id": new_id.bytes}
 
-    try:
-        algorithm_pool.pop(id)
-    except KeyError:
-        # do nothing, key is already out of the pool. Dont ask that many questions...
-        pass
 
-    return {"message": f"deleted instance with id={id}"}
+# @app.delete("/algorithm/{raw_id}")
+# async def delete_algorithm(raw_id):
+    # id = uuid.UUID(raw_id, version=4)
+
+    # try:
+    #     algorithm_pool.pop(id)
+    # except KeyError:
+    #     # do nothing, key is already out of the pool. Dont ask that many questions...
+    #     pass
+
+    # return {"message": f"deleted instance with id={id}"}
 
 
 #####################
