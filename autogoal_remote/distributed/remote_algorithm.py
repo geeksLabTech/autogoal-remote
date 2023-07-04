@@ -4,9 +4,7 @@ from typing import Dict
 
 import dill
 from pydantic import BaseModel
-from requests.api import delete, post
 
-from autogoal.kb import AlgorithmBase
 from autogoal.utils._dynamic import dynamic_import
 
 contrib_pattern = r"autogoal_(?P<contrib>\w+)\."
