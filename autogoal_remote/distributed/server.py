@@ -1,6 +1,8 @@
 import uuid
 import json
 import uvicorn
+# from kade_drive.client import ClienSession
+from kade_drive.client import ClientSession
 from autogoal_remote.distributed.proxy import (
     RemoteAlgorithmDTO,
     dumps,
@@ -17,6 +19,7 @@ from autogoal.utils._dynamic import dynamic_call
 from autogoal_remote.distributed.utils import receive_large_message, send_large_message
 # import pprint
 # import time
+from utils import digest, load_data_and_call_instance
 
 app = FastAPI()
 
@@ -157,6 +160,31 @@ fid = id
 @app.websocket("/algorithm/call")
 async def call(websocket: WebSocket):
     await websocket.accept()
+    data = await websocket.receive_text()
+    request = json.loads(data)
+    id = uuid.UUID(request["instance_id"], version=4)
+    inst = algorithm_pool.get(id)
+    if inst is None:
+        await websocket.send_json(
+            {"error": f"Algorithm instance with id={id} not found"}
+        )
+        return
+    key = uuid.UUID(request['data_hash'], version=4)
+    client = ClientSession([])
+    client.connect()
+    value = client.get(key)
+    if value is None:
+        await websocket.send_json(
+            {"error": f"Data for hash {key} not found"}
+        )
+        return
+    
+    result_data = load_data_and_call_instance(inst, value, algorithm_pool)
+    await send_large_message(websocket, result_data, 500)
+
+@app.websocket("/algorithm/call_with_data")
+async def call_with_data(websocket: WebSocket):
+    await websocket.accept()
     data = await receive_large_message(websocket)
     request = json.loads(data)
     id = uuid.UUID(request["instance_id"], version=4)
@@ -166,41 +194,10 @@ async def call(websocket: WebSocket):
             {"error": f"Algorithm instance with id={id} not found"}
         )
         return
-
-    attr = getattr(inst, request["attr"])
-    is_callable = hasattr(attr, "__call__")
-    run_as_restricted = is_callable and request["attr"] == "run"
-
-    args = loads(request["args"])
-    kwargs = loads(request["kwargs"])
-
-    func = (
-        RestrictedWorkerWithState(
-            dynamic_call, remote_call_timeout, remote_call_memory_limit
-        )
-        if run_as_restricted
-        else dynamic_call
-    )
-
-    try:
-        result = attr
-        if is_callable:
-            result = func(
-                inst,
-                request["attr"],
-                *args,
-                **kwargs,
-            )
-
-        if run_as_restricted:
-            result, ninstance = result
-            if ninstance is not None:
-                algorithm_pool[id] = ninstance
-
-        result_data = json.dumps({"result": dumps(result)})
-    except Exception as e:
-        result_data = json.dumps({"error": str(e)})
-
+    
+    result_data = load_data_and_call_instance(inst, request, algorithm_pool)
+    client = ClientSession([])
+    client.put(digest(request), request, False)
     await send_large_message(websocket, result_data, 500)
 
 

@@ -25,6 +25,27 @@ async def get_algorithms(uri: str):
 
 async def call_algorithm(uri: str, instance_id, attr, args, kwargs):
     async with websockets.connect(uri) as websocket:
+        data_hash = digest({
+            "attr": attr,
+            "args": args,
+            "kwargs":kwargs
+        })
+        request_with_hash = {
+            "instance_id": instance_id,
+            "data_hash": data_hash
+        }
+        data_to_send = json.dumps(request_with_hash)
+        await websocket.send(data_to_send)
+        response = await websockets.recv()
+        response = json.loads(response)
+        error = response.get("error")
+        if error is not None:
+            raise Exception(f"Proxy Error (server-side). {error}")
+        return response
+
+
+async def call_algorithm_with_data(uri: str, instance_id, attr, args, kwargs):
+    async with websockets.connect(uri) as websocket:
         request = {
             "instance_id": instance_id,
             "attr": attr,

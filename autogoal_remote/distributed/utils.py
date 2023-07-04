@@ -1,7 +1,16 @@
+import hashlib
 from typing import Callable
 from fastapi import WebSocket
 from functools import wraps
 import json
+
+from pydantic import BaseModel
+from autogoal_remote.distributed.proxy import (
+    dumps,
+    loads,
+)
+from autogoal.utils import RestrictedWorkerWithState
+from autogoal.utils._dynamic import dynamic_call
 
 
 async def send_large_message(websocket: WebSocket, data: str, chunk_size: int):
@@ -42,3 +51,47 @@ async def receive_large_message(websocket: WebSocket):
     # Reassemble the original message
     data = "".join(chunks)
     return data
+
+
+def digest(string):
+    if not isinstance(string, bytes):
+        string = str(string).encode('utf8')
+    return hashlib.sha1(string).digest()
+
+def load_data_and_call_instance(inst, data: dict, algorithm_pool: dict):
+    attr = getattr(inst, data["attr"])
+    is_callable = hasattr(attr, "__call__")
+    run_as_restricted = is_callable and data["attr"] == "run"
+
+    args = loads(data["args"])
+    kwargs = loads(data["kwargs"])
+
+    func = (
+        RestrictedWorkerWithState(
+            dynamic_call, remote_call_timeout, remote_call_memory_limit
+        )
+        if run_as_restricted
+        else dynamic_call
+    )
+
+    try:
+        result = attr
+        if is_callable:
+            result = func(
+                inst,
+                data["attr"],
+                *args,
+                **kwargs,
+            )
+
+        if run_as_restricted:
+            result, ninstance = result
+            if ninstance is not None:
+                algorithm_pool[id] = ninstance
+
+        result_data = json.dumps({"result": dumps(result)})
+    except Exception as e:
+        result_data = json.dumps({"error": str(e)})
+
+    return result_data
+
