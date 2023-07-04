@@ -1,6 +1,5 @@
 import autogoal_remote.distributed.client as client
 from autogoal_remote.distributed.remote_algorithm import (
-    AlgorithmBase,
     RemoteAlgorithmDTO,
     decode,
     dumps,
@@ -114,38 +113,39 @@ class RemoteAlgorithmBase(AlgorithmBase):
     def run(self, *args):
         pass
 
-
-class AttrCallRequest(BaseModel):
-    instance_id: str
-    attr: str
-    args: str
-    kwargs: str
-
-    @staticmethod
-    def build(instance_id: str, attr: str, args, kwargs):
-        return AttrCallRequest(
-            instance_id=instance_id,
-            attr=attr,
-            args=dumps(args),
-            kwargs=dumps(kwargs),
-        )
-
-
-class InstantiateRequest(BaseModel):
-    args: str
-    kwargs: str
-    algorithm_dto: Dict
-
-    @staticmethod
-    def build(dto: RemoteAlgorithmDTO, args, kwargs):
-        return InstantiateRequest(
-            args=dumps(args),
-            kwargs=dumps(kwargs),
-            algorithm_dto=dto,
-        )
-
-
 class RemoteAttrInfo(BaseModel):
     attr: str
     exists: bool
     is_callable: bool
+
+# class AttrCallRequest(BaseModel):
+#     instance_id: str
+#     attr: str
+#     args: str
+#     kwargs: str
+
+#     @staticmethod
+#     def build(instance_id: str, attr: str, args, kwargs):
+#         return AttrCallRequest(
+#             instance_id=instance_id,
+#             attr=attr,
+#             args=dumps(args),
+#             kwargs=dumps(kwargs),
+#         )
+
+
+# class InstantiateRequest(BaseModel):
+#     args: str
+#     kwargs: str
+#     algorithm_dto: Dict
+
+#     @staticmethod
+#     def build(dto: RemoteAlgorithmDTO, args, kwargs):
+#         return InstantiateRequest(
+#             args=dumps(args),
+#             kwargs=dumps(kwargs),
+#             algorithm_dto=dto,
+#         )
+
+
+
