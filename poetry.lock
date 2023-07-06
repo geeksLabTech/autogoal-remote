@@ -224,14 +224,14 @@ files = [
 
 [[package]]
 name = "kade-drive"
-version = "0.2.0"
+version = "0.5.0"
 description = "distributed file system based on kademlia dht"
 category = "main"
 optional = false
 python-versions = ">=3.10,<4.0"
 files = [
-    {file = "kade_drive-0.2.0-py3-none-any.whl", hash = "sha256:63fd339a61c35e4ba5511fae482d37bb6b5c34d33fe124ac4f263b2e2d53652d"},
-    {file = "kade_drive-0.2.0.tar.gz", hash = "sha256:71f3f3c22539b359e809f94b913498a92d0aeccd47d51592d48af9068e09c858"},
+    {file = "kade_drive-0.5.0-py3-none-any.whl", hash = "sha256:d37f3a751a0cc068cba9cb35a2ab52c93abc45db90938396aed2b6023c6400ec"},
+    {file = "kade_drive-0.5.0.tar.gz", hash = "sha256:b481af94af68dfc8cc159f98b4f926011fa55eb68329c366f054c69750461a78"},
 ]
 
 [package.dependencies]
@@ -746,4 +746,4 @@ six = "*"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "4e09dec0966b95c5015d21f2c4aee937293aa7dd929de4759900d6c1772d69c0"
+content-hash = "472a8eb2b5937aba19879c771cd97904c3fc67e2ec387d6fdc85a65e56357409"

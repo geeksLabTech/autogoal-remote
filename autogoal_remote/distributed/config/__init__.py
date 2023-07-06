@@ -7,6 +7,7 @@ from yamlable import YamlAble, yaml_info
 
 config_dir = dirname(abspath(getsourcefile(lambda: 0)))
 
+# TODO Try to make autodiscovery
 
 @yaml_info(yaml_tag_ns="autogoal.remote.connectionAlias")
 class Alias(YamlAble):
