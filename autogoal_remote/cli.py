@@ -5,7 +5,8 @@ from pathlib import Path
 from rich.console import Console
 import subprocess
 from message_system.message_system import MessageSystem
-import threading 
+import threading
+from resource_monitor_scanner import log_system_usage
 
 app = typer.Typer(name="remote")
 console = Console()
@@ -22,7 +23,8 @@ def remote_main():
 
 @app.command("connect")
 def remote_connect(
-    ip: str = typer.Argument(None, help="Interface ip to be used by the HTTP API"),
+    ip: str = typer.Argument(
+        None, help="Interface ip to be used by the HTTP API"),
     port: int = typer.Argument(None, help="Port to be bind by the server"),
     connection_alias: int = typer.Argument(
         None,
@@ -80,7 +82,8 @@ def remote_connect(
     )
 
     for contrib, clss in classes_by_contrib.items():
-        typer.echo(f"🛠️  {connection_alias} -> {contrib}: {len(clss)} algorithms.")
+        typer.echo(
+            f"🛠️  {connection_alias} -> {contrib}: {len(clss)} algorithms.")
 
         if verbose:
             for cls in clss:
@@ -95,7 +98,8 @@ def share_contribs(
     ip: str = typer.Argument(
         "0.0.0.0", help="Interface ip of listening AutoGOAL service"
     ),
-    port: int = typer.Argument(8000, help="Port of listening AutoGOAL service"),
+    port: int = typer.Argument(
+        8000, help="Port of listening AutoGOAL service"),
 ):
     """
     Expose algorithms from installed contribs to other AutoGOAL instances over the network.
@@ -110,6 +114,9 @@ def share_contribs(
     ms.add_to_send(f"autogoal {ip} {str(port)}")
     heartbeat_thread = threading.Thread(target=ms.send_heartbeat)
     heartbeat_thread.start()
+
+    resource_monitor = threading.Thread(target=log_system_usage, args=(-1,))
+    resource_monitor.start()
     
     rm_server.distributed.run(ip, port)
 
@@ -117,7 +124,8 @@ def share_contribs(
 @app.command("serve")
 def automl_server(
     path: str = typer.Argument(None, help="Autogoal serialized model"),
-    ip: str = typer.Argument("0.0.0.0", help="Interface ip to be used by the HTTP API"),
+    ip: str = typer.Argument(
+        "0.0.0.0", help="Interface ip to be used by the HTTP API"),
     port: int = typer.Argument(8000, help="Port to be bind by the server"),
 ):
     """
