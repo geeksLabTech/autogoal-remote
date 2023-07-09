@@ -4,6 +4,8 @@ import typer
 from pathlib import Path
 from rich.console import Console
 import subprocess
+from message_system.message_system import MessageSystem
+import threading 
 
 app = typer.Typer(name="remote")
 console = Console()
@@ -104,6 +106,11 @@ def share_contribs(
     except:
         raise Exception("autogoal-remote installation not detected")
 
+    ms = MessageSystem()
+    ms.add_to_send(f"autogoal {ip} {str(port)}")
+    heartbeat_thread = threading.Thread(target=ms.send_heartbeat)
+    heartbeat_thread.start()
+    
     rm_server.distributed.run(ip, port)
 
 
