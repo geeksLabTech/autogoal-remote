@@ -6,7 +6,7 @@ from rich.console import Console
 import subprocess
 from message_system.message_system import MessageSystem
 import threading
-from resource_monitor_scanner import log_system_usage
+# from resource_monitor_scanner import log_system_usage
 
 app = typer.Typer(name="remote")
 console = Console()
@@ -115,8 +115,8 @@ def share_contribs(
     heartbeat_thread = threading.Thread(target=ms.send_heartbeat)
     heartbeat_thread.start()
 
-    resource_monitor = threading.Thread(target=log_system_usage, args=(-1,))
-    resource_monitor.start()
+    # resource_monitor = threading.Thread(target=log_system_usage, args=(-1,))
+    # resource_monitor.start()
     
     rm_server.distributed.run(ip, port)
 
