@@ -16,10 +16,9 @@ from autogoal_contrib import find_classes
 from autogoal.utils import Gb, RestrictedWorkerWithState, Sec
 from autogoal.utils._dynamic import dynamic_call
 
-from autogoal_remote.distributed.utils import receive_large_message, send_large_message
+from autogoal_remote.distributed.utils import receive_large_message, send_large_message, digest, load_data_and_call_instance
 # import pprint
 # import time
-from utils import digest, load_data_and_call_instance
 
 app = FastAPI()
 
